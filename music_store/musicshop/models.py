@@ -1,6 +1,8 @@
+from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.utils import timezone
 
 
 class MediaType(models.Model):
@@ -109,6 +111,7 @@ class CartProduct(models.Model):
 
 
 class Cart(models.Model):
+    """Cart"""
 
     owner = models.ForeignKey('Customer', verbose_name='Customer', on_delete=models.CASCADE)
     product = models.ManyToManyField(
@@ -124,3 +127,79 @@ class Cart(models.Model):
     class Meta:
         verbose_name = 'Cart'
         verbose_name_plural = 'Carts'
+
+
+class Order(models.Model):
+    """Customer order"""
+
+    STATUS_NEW = 'new'
+    STATUS_IN_PROGRESS = 'in_progress'
+    STATUS_READY = 'is_ready'
+    STATUS_COMPLETED = 'completed'
+
+    BUYING_TYPE_SELF = 'self'
+    BUYING_TYPE_DELIVERY = 'delivery'
+
+    STATUS_CHOICES = (
+        (STATUS_NEW, 'New order'),
+        (STATUS_IN_PROGRESS, 'Order in progress'),
+        (STATUS_READY, 'Order is ready'),
+        (STATUS_COMPLETED, 'Customer received order')
+    )
+
+    BUYING_TYPE_CHOICES = (
+        (BUYING_TYPE_SELF, 'Self collection'),
+        (BUYING_TYPE_DELIVERY, 'Delivery')
+    )
+
+    customer = models.ForeignKey('Customer', verbose_name='Customer', related_name='orders', on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=255, verbose_name='First name')
+    last_name = models.CharField(max_length=255, verbose_name='Last name')
+    phone = models.CharField(max_length=20, verbose_name='Telephone number')
+    cart = models.ForeignKey(Cart, verbose_name='Cart', on_delete=models.CASCADE)
+    address = models.CharField(max_length=1024, verbose_name='Address', null=True, blank=True)
+    status = models.CharField(max_length=100, verbose_name='Order status', choices=STATUS_CHOICES, default=STATUS_NEW)
+    buying_type = models.CharField(max_length=100, verbose_name='Order type', choices=BUYING_TYPE_CHOICES)
+    comment = models.CharField(verbose_name='Comments about order', null=True, blank=True)
+    created_at = models.DateField(verbose_name='Order placed date', auto_now=True)
+    order_date = models.DateField(verbose_name='Date of order receiving', default=timezone.now)
+
+    def __str__(self):
+        return  str(self.id)
+
+    class Meta:
+        verbose_name = 'Order'
+        verbose_name_plural = 'Orders'
+
+
+class Customer(models.Model):
+    """Customer"""
+
+    user = models.OneToOneField(settings.AUTH_MODEL_USER, verbose_name='Customer', on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=True, verbose_name='Active?')
+    customer_orders = models.ManyToManyField(Order, blank=True, verbose_name='Customers orders', related_name='related_customer')
+    wishlist = models.ManyToManyField(Album, verbose_name='Wishlist', blank=True)
+    phone = models.CharField(max_length=20, verbose_name='Telephone number')
+    address = models.TextField(verbose_name='Address', null=True, blank=True)
+
+    def __str__(self):
+        return  f"{self.user.username}"
+
+    class Meta:
+        verbose_name = 'Customer'
+        verbose_name_plural = 'Customers'
+
+
+class Notification(models.Model):
+    """Notifications"""
+
+    recipient = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    text = models.TextField()
+    read = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Notification for {self.recipient.user.username} | id={self.id}"
+
+    class Meta:
+        verbose_name = 'Notification'
+        verbose_name_plural = 'Notifications'
