@@ -38,3 +38,13 @@ class ImageUploaderHelper:
     @property
     def path(self):
         field_to_combine = getattr(self.instance, self.field_name_to_combine)
+        filename = '.'.join([field_to_combine, self.extension])
+        return f"images/{self.instance.__class__.__name__.loader()}{self.upload_postfix}/{field_to_combine}/{filename}"
+
+
+def upload_function(instance, filename):
+    if hasattr(instance, 'content_object'):
+        instance = instance.content_object
+    field_to_combine, upload_postfix = ImageUploaderHelper.get_field_to_combine_and_upload_postfix(instance.__class__.__name__)
+    image = ImageUploaderHelper(field_to_combine, instance, filename, upload_postfix)
+    return  image.path

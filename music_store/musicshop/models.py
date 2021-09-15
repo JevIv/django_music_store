@@ -3,6 +3,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils import timezone
+from utils import upload_function
 
 
 class MediaType(models.Model):
@@ -22,6 +23,7 @@ class Member(models.Model):
 
     name = models.CharField(max_length=255, verbose_name='Name of musician')
     slug = models.SlugField()
+    image = models.ImageField(upload_to=upload_function, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -52,6 +54,7 @@ class Artist(models.Model):
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
     members = models.ManyToManyField(Member, verbose_name='Band member', related_name='artist')
     slug = models.SlugField()
+    image = models.ImageField(upload_to=upload_function, null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} | {self.genre.name}"
@@ -67,14 +70,15 @@ class Album(models.Model):
     artist = models.ForeignKey(Artist, on_delete=models.CASCADE, verbose_name='Artist')
     name = models.CharField(max_length=255, verbose_name='Album name')
     media_type = models.ForeignKey(MediaType, on_delete=models.CASCADE, verbose_name='Media')
-    songs_list = models.CharField(verbose_name='Track list')
+    songs_list = models.CharField(max_length=1024, verbose_name='Track list')
     release_date = models.DateField(verbose_name='Release date')
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
-    description = models.CharField(verbose_name='Description', default='Description is coming soon')
+    description = models.CharField(max_length=1024, verbose_name='Description', default='Description is coming soon')
     stock = models.IntegerField(default=1, verbose_name='Available in stock')
     price = models.DecimalField(max_digits=9, decimal_places=2, verbose_name='Price')
     offer_of_the_week = models.BooleanField(default=False, verbose_name='Offer of the week?')
     slug = models.SlugField()
+    image = models.ImageField(upload_to=upload_function)
 
     def __str__(self):
         return f"{self.id} | {self.artist.name} | {self.name}"
@@ -160,7 +164,7 @@ class Order(models.Model):
     address = models.CharField(max_length=1024, verbose_name='Address', null=True, blank=True)
     status = models.CharField(max_length=100, verbose_name='Order status', choices=STATUS_CHOICES, default=STATUS_NEW)
     buying_type = models.CharField(max_length=100, verbose_name='Order type', choices=BUYING_TYPE_CHOICES)
-    comment = models.CharField(verbose_name='Comments about order', null=True, blank=True)
+    comment = models.CharField(max_length=1024, verbose_name='Comments about order', null=True, blank=True)
     created_at = models.DateField(verbose_name='Order placed date', auto_now=True)
     order_date = models.DateField(verbose_name='Date of order receiving', default=timezone.now)
 
@@ -175,7 +179,7 @@ class Order(models.Model):
 class Customer(models.Model):
     """Customer"""
 
-    user = models.OneToOneField(settings.AUTH_MODEL_USER, verbose_name='Customer', on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, verbose_name='Customer', on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True, verbose_name='Active?')
     customer_orders = models.ManyToManyField(Order, blank=True, verbose_name='Customers orders', related_name='related_customer')
     wishlist = models.ManyToManyField(Album, verbose_name='Wishlist', blank=True)
@@ -203,3 +207,20 @@ class Notification(models.Model):
     class Meta:
         verbose_name = 'Notification'
         verbose_name_plural = 'Notifications'
+
+
+class ImageGallery(models.Model):
+    """Gallery"""
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    image = models.ImageField(upload_to=upload_function)
+    use_in_slider = models.BooleanField(default=False)
+
+    def __str__(self):
+        return  f"Images for {self.content_object}"
+
+    class Meta:
+        verbose_name = 'Image Gallery'
+        verbose_name_plural = verbose_name
+
