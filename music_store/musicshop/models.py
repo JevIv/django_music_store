@@ -2,7 +2,9 @@ from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 from utils import upload_function
 
 
@@ -59,6 +61,9 @@ class Artist(models.Model):
     def __str__(self):
         return f"{self.name} | {self.genre.name}"
 
+    def get_absolute_url(self):
+        return reverse('artist_detail', kwargs={'artist_slug': self.slug})
+
     class Meta:
         verbose_name = 'Artist'
         verbose_name_plural = 'Artists'
@@ -82,6 +87,9 @@ class Album(models.Model):
 
     def __str__(self):
         return f"{self.id} | {self.artist.name} | {self.name}"
+
+    def get_absolute_url(self):
+        return reverse('album_detail', kwargs={'artist_slug': self.artist.slug, 'album_slug': self.slug})
 
     @property
     def ct_model(self):
@@ -119,7 +127,7 @@ class Cart(models.Model):
 
     owner = models.ForeignKey('Customer', verbose_name='Customer', on_delete=models.CASCADE)
     product = models.ManyToManyField(
-        CartProduct, blank=True, null=True, related_name='related_cart', verbose_name='Cart products')
+        CartProduct, blank=True, related_name='related_cart', verbose_name='Cart products')
     total_products = models.IntegerField(default=0, verbose_name='Total products quantity')
     final_price = models.DecimalField(max_digits=9, decimal_places=2, verbose_name='Total price')
     in_order = models.BooleanField(default=False)
@@ -218,7 +226,10 @@ class ImageGallery(models.Model):
     use_in_slider = models.BooleanField(default=False)
 
     def __str__(self):
-        return  f"Images for {self.content_object}"
+        return f"Images for {self.content_object}"
+
+    def image_url(self):
+        return mark_safe(f'<img src="{self.image.url}" width="auto" height="200px">')
 
     class Meta:
         verbose_name = 'Image Gallery'
