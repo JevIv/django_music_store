@@ -50,7 +50,7 @@ class LoginView(views.View):
         context = {
             'form': form
         }
-        return render(request, 'registration.html', context)
+        return render(request, 'login.html', context)
 
 
 class RegistrationView(views.View):
