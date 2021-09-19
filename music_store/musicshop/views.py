@@ -29,7 +29,7 @@ class AlbumDetailsView(views.generic.DetailView):
     context_object_name = 'album'
 
 
-class Loginview(views.View):
+class LoginView(views.View):
 
     def get(self, request, *args, **kwargs):
         form = LoginForm(request.POST or None)
